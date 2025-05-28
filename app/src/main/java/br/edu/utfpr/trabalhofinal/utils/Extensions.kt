@@ -28,6 +28,11 @@ fun BigDecimal.formatar(): String {
     return formatter.format(this)
 }
 
+fun BigDecimal.formatarPorTipo(tipo: TipoLancamentoEnum): String {
+    val sinal = if (tipo == TipoLancamentoEnum.DESPESA) "-" else ""
+    return "$sinal${this.formatar()}"
+}
+
 fun LocalDate.formatar(): String {
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     return format(formatter)

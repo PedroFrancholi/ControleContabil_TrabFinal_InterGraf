@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ThumbDownOffAlt
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -44,6 +46,7 @@ import br.edu.utfpr.trabalhofinal.ui.utils.composables.ErroAoCarregar
 import br.edu.utfpr.trabalhofinal.utils.calcularProjecao
 import br.edu.utfpr.trabalhofinal.utils.calcularSaldo
 import br.edu.utfpr.trabalhofinal.utils.formatar
+import br.edu.utfpr.trabalhofinal.utils.formatarPorTipo
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -103,7 +106,7 @@ private fun AppBar(
             titleContentColor = MaterialTheme.colorScheme.primary,
             navigationIconContentColor = MaterialTheme.colorScheme.primary,
             actionIconContentColor = MaterialTheme.colorScheme.primary,
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         actions = {
             IconButton(onClick = onAtualizarPressed) {
@@ -164,13 +167,48 @@ private fun List(
 ) {
     LazyColumn(modifier = modifier) {
         items(lancamentos) { lancamento ->
-            val pago = if (lancamento.paga) "pago" else "pendente"
-            val descricao = "${lancamento.data.formatar()} - ${lancamento.descricao} - ${lancamento.valor} - $pago"
+            val cor = if(lancamento.tipo == TipoLancamentoEnum.RECEITA) {
+                Color(0xFF00984E)
+            } else {
+                Color(0xFFCF5355)
+            }
+            val icon = if(lancamento.paga) Icons.Filled.ThumbUp else Icons.Filled.ThumbDownOffAlt
 
-            ListItem(
-                modifier = Modifier.clickable { onLancamentoPressed(lancamento) },
-                headlineContent = { Text(descricao) },
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onLancamentoPressed(lancamento) }
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = cor
+                )
+                Spacer(Modifier.size(10.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = lancamento.descricao,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ){
+                        Text(
+                            text = lancamento.data.formatar(),
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Text(
+                            text = lancamento.valor.formatarPorTipo(lancamento.tipo),
+                            color = cor
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -193,19 +231,17 @@ private fun BottomBar(
 ) {
     Column(
         modifier = modifier
-            .background(color = MaterialTheme.colorScheme.secondaryContainer),
+            .background(color = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Totalizador(
             modifier = Modifier.padding(top = 20.dp),
             titulo = stringResource(R.string.saldo),
             valor = lancamentos.calcularSaldo(),
-            textColor = MaterialTheme.colorScheme.secondary
         )
         Totalizador(
             modifier = Modifier.padding(bottom = 20.dp),
             titulo = stringResource(R.string.previsao),
             valor = lancamentos.calcularProjecao(),
-            textColor = MaterialTheme.colorScheme.secondary
         )
     }
 }
@@ -215,8 +251,14 @@ fun Totalizador(
     modifier: Modifier = Modifier,
     titulo: String,
     valor: BigDecimal,
-    textColor: Color
 ) {
+    val corTexto = if (valor >= BigDecimal.ZERO) Color(0xFF00984E) else Color(0xFFCF5355)
+    val valorFormatado = if (valor >= BigDecimal.ZERO){
+        valor.formatar()
+    } else {
+        "-${valor.abs().formatar()}"
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth(),
@@ -227,14 +269,14 @@ fun Totalizador(
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.End,
             text = titulo,
-            color = textColor
+            color = MaterialTheme.colorScheme.secondary
         )
         Spacer(Modifier.size(10.dp))
         Text(
             modifier = Modifier.width(100.dp),
             textAlign = TextAlign.End,
-            text = valor.formatar(),
-            color = textColor
+            text = valorFormatado,
+            color = corTexto
         )
         Spacer(Modifier.size(20.dp))
     }
